@@ -14,16 +14,6 @@ fn main() -> anyhow::Result<()> {
     let mut builder = VulkanBuilder::builder().with_name("Test 1").build()?;
 
     let mut gpus = builder.list_available_physical_devices()?;
-    info!("Available GPUs:");
-    for info in &gpus {
-        info!(
-            "- {} [Discrete: {}, VRAM: {} GiB]",
-            info.name(),
-            info.is_discrete(),
-            info.vram_size() / 1_073_741_824
-        );
-    }
-
     let gpu = {
         if gpus.len() > 1 {
             gpus.into_iter()
@@ -36,6 +26,16 @@ fn main() -> anyhow::Result<()> {
     };
 
     let app = builder.set_physical_device(gpu).build()?;
+
+    let in_data = [1, 2, 3, 4];
+    info!("Creating buffer containing {:?}", in_data);
+    let buffer = app.new_cpu_buffer(&in_data, ash::vk::BufferUsageFlags::UNIFORM_BUFFER)?;
+
+    let mut out_data = [0; 4];
+    buffer.read(&mut out_data, 0);
+    info!("Read from buffer: {:?}", out_data);
+
+    assert_eq!(&out_data, &in_data);
 
     Ok(())
 }

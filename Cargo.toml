@@ -5,6 +5,7 @@ edition = "2021"
 
 [dependencies]
 ash = "^0.33.3"
+vk-mem = { version = "^0.2", git = "https://github.com/icanwalkonwater/vk-mem-rs.git" }
 
 thiserror = "^1.0"
 log = "^0.4"

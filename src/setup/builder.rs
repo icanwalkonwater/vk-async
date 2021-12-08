@@ -4,7 +4,7 @@ use crate::{
     VulkanApp,
 };
 use ash::vk;
-use std::{ffi::CStr, mem::ManuallyDrop, os::raw::c_char};
+use std::{ffi::CStr, mem::ManuallyDrop, os::raw::c_char, sync::Arc};
 
 type DeviceAdapter = (vk::PhysicalDevice, DeviceQueues);
 
@@ -27,7 +27,8 @@ impl VulkanBuilder {
             instance,
             debug_utils: ManuallyDrop::new(debug_utils),
             physical_device: None,
-            device_extensions: Vec::new(),
+            // Promoted to vulkan 1.1 so should be available
+            device_extensions: vec![ash::vk::KhrDedicatedAllocationFn::name().as_ptr()],
         }
     }
 
@@ -44,7 +45,7 @@ impl VulkanBuilder {
 }
 
 impl VulkanBuilder {
-    pub fn build(self) -> Result<VulkanApp> {
+    pub fn build(self) -> Result<Arc<VulkanApp>> {
         let device = {
             let physical = self
                 .physical_device
@@ -63,13 +64,20 @@ impl VulkanBuilder {
             }
         };
 
-        let app = VulkanApp {
+        let vma = vk_mem::Allocator::new(&vk_mem::AllocatorCreateInfo {
+            instance: self.instance.clone(),
+            device: device.clone(),
+            physical_device: self.physical_device.unwrap().0,
+            flags: vk_mem::AllocatorCreateFlags::EXTERNALLY_SYNCHRONIZED,
+            ..Default::default()
+        })?;
+
+        Ok(Arc::new(VulkanApp {
             _entry: self.entry,
             instance: self.instance,
             debug_utils: self.debug_utils,
             device,
-        };
-
-        Ok(app)
+            vma: Arc::new(vma),
+        }))
     }
 }
