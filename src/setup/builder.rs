@@ -1,12 +1,15 @@
 use crate::{
     errors::{Result, VulkanError},
-    setup::{DebugUtils, DeviceQueues, PhysicalDeviceInfo, VulkanInitializer},
+    setup::{
+        queues::{DeviceQueueIndices, DeviceQueues},
+        DebugUtils, PhysicalDeviceInfo, VulkanInitializer,
+    },
     VulkanApp,
 };
 use ash::vk;
 use std::{ffi::CStr, mem::ManuallyDrop, os::raw::c_char, sync::Arc};
 
-type DeviceAdapter = (vk::PhysicalDevice, DeviceQueues);
+type DeviceAdapter = (vk::PhysicalDevice, DeviceQueueIndices);
 
 pub struct VulkanBuilder {
     pub(crate) entry: ash::Entry,
@@ -33,7 +36,7 @@ impl VulkanBuilder {
     }
 
     pub fn set_physical_device(mut self, device: PhysicalDeviceInfo) -> Self {
-        let queues = DeviceQueues::from_device(&device).unwrap();
+        let queues = DeviceQueueIndices::from_device(&device).unwrap();
         self.physical_device = Some((device.handle, queues));
         self
     }
@@ -67,10 +70,12 @@ impl VulkanBuilder {
         let vma = vk_mem::Allocator::new(&vk_mem::AllocatorCreateInfo {
             instance: self.instance.clone(),
             device: device.clone(),
-            physical_device: self.physical_device.unwrap().0,
+            physical_device: self.physical_device.as_ref().unwrap().0,
             flags: vk_mem::AllocatorCreateFlags::EXTERNALLY_SYNCHRONIZED,
             ..Default::default()
         })?;
+
+        let queues = DeviceQueues::new(&device, &self.physical_device.as_ref().unwrap().1)?;
 
         Ok(Arc::new(VulkanApp {
             _entry: self.entry,
@@ -78,6 +83,7 @@ impl VulkanBuilder {
             debug_utils: self.debug_utils,
             device,
             vma: Arc::new(vma),
+            queues,
         }))
     }
 }

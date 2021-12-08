@@ -9,3 +9,6 @@ pub use debug_utils::*;
 
 mod device;
 pub use device::*;
+
+mod queues;
+pub use queues::*;

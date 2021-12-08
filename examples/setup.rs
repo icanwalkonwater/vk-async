@@ -2,9 +2,10 @@ use log::{info, LevelFilter};
 use simplelog::{ColorChoice, Config, TermLogger, TerminalMode};
 use vk_async::setup::VulkanBuilder;
 
-fn main() -> anyhow::Result<()> {
+#[tokio::main(flavor = "current_thread")]
+async fn main() -> anyhow::Result<()> {
     TermLogger::init(
-        LevelFilter::Trace,
+        LevelFilter::Debug,
         Config::default(),
         TerminalMode::Mixed,
         ColorChoice::Auto,
@@ -27,12 +28,15 @@ fn main() -> anyhow::Result<()> {
 
     let app = builder.set_physical_device(gpu).build()?;
 
+    // Start an async context
     let in_data = [1, 2, 3, 4];
     info!("Creating buffer containing {:?}", in_data);
-    let buffer = app.new_cpu_buffer(&in_data, ash::vk::BufferUsageFlags::UNIFORM_BUFFER)?;
+    let buffer = app
+        .upload_to_gpu_buffer(&in_data, ash::vk::BufferUsageFlags::empty())
+        .await?;
 
     let mut out_data = [0; 4];
-    buffer.read(&mut out_data, 0);
+    buffer.read(&app, &mut out_data, 0).await?;
     info!("Read from buffer: {:?}", out_data);
 
     assert_eq!(&out_data, &in_data);

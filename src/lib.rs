@@ -1,8 +1,11 @@
 use crate::setup::DebugUtils;
+use setup::DeviceQueues;
 use std::{mem::ManuallyDrop, sync::Arc};
 
 pub mod mem;
 pub mod setup;
+pub mod tasks;
+mod utils;
 
 pub mod errors {
     use thiserror::Error;
@@ -34,6 +37,7 @@ pub struct VulkanApp {
     pub(crate) debug_utils: ManuallyDrop<DebugUtils>,
     pub(crate) device: ash::Device,
     pub(crate) vma: Arc<vk_mem::Allocator>,
+    pub(crate) queues: DeviceQueues,
 }
 
 impl Drop for VulkanApp {
@@ -41,7 +45,9 @@ impl Drop for VulkanApp {
         unsafe {
             // TODO: add destroys here
 
-            Arc::get_mut(&mut self.vma).expect("There still are buffers around referencing VMA !").destroy();
+            Arc::get_mut(&mut self.vma)
+                .expect("There still are buffers around referencing VMA !")
+                .destroy();
 
             self.device.destroy_device(None);
             ManuallyDrop::drop(&mut self.debug_utils);
