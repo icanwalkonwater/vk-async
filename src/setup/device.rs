@@ -1,5 +1,5 @@
 use crate::{
-    errors::{Result},
+    errors::Result,
     setup::{queues::DeviceQueueIndices, VulkanBuilder, VULKAN_VERSION},
 };
 use ash::{vk, vk::QueueFamilyProperties2};

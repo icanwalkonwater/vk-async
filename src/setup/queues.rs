@@ -1,11 +1,10 @@
-use std::ops::Deref;
 use crate::{
     errors::{Result, VulkanError},
     setup::PhysicalDeviceInfo,
     tasks::WaitForFenceFuture,
 };
 use ash::vk;
-use log::debug;
+
 use parking_lot::Mutex;
 
 /// Represents the queue indices to use for graphics, compute and transfer.
@@ -186,7 +185,7 @@ impl DeviceQueues {
         device: &'a ash::Device,
         submit_info: &[vk::SubmitInfo],
     ) -> Result<WaitForFenceFuture<'a>> {
-        unsafe { Self::submit_internal(device, & self.transfer().queue, submit_info) }
+        unsafe { Self::submit_internal(device, &self.transfer().queue, submit_info) }
     }
 
     unsafe fn submit_internal<'a>(

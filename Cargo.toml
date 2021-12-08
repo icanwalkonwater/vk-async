@@ -15,7 +15,7 @@ log = "^0.4"
 [dev-dependencies]
 anyhow = "^1.0"
 simplelog = "^0.11"
-tokio = { version = "^1.14", features = ["rt", "macros"] }
+tokio = { version = "^1.14", features = ["rt-multi-thread", "macros", "parking_lot"] }
 
 [features]
 default = ["debug-utils"]

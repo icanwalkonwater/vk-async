@@ -1,9 +1,10 @@
-use std::sync::Arc;
 use ash::vk;
-use std::marker::PhantomData;
-use log::debug;
-use crate::errors::Result;
-use crate::mem::{create_buffer, RawAllocation};
+use std::{marker::PhantomData, sync::Arc};
+
+use crate::{
+    errors::Result,
+    mem::{create_buffer, RawAllocation},
+};
 
 use crate::VulkanApp;
 
@@ -51,10 +52,15 @@ impl<D: Sized + Copy> GpuBufferHandle<D> {
         )?;
 
         staging_raw.write_to(data)?;
-        unsafe { app.create_copy_buffer_cmd((staging_handle, &staging_raw), (self.handle, &self.raw)) }?.await?;
+        unsafe {
+            app.create_copy_buffer_cmd((staging_handle, &staging_raw), (self.handle, &self.raw))
+        }?
+        .await?;
 
         // Destroy staging
-        self.raw.vma.destroy_buffer(staging_handle, &staging_raw.allocation);
+        self.raw
+            .vma
+            .destroy_buffer(staging_handle, &staging_raw.allocation);
         Ok(())
     }
 
@@ -66,12 +72,17 @@ impl<D: Sized + Copy> GpuBufferHandle<D> {
             vk_mem::MemoryUsage::CpuOnly,
         )?;
 
-        unsafe { app.create_copy_buffer_cmd((self.handle, &self.raw), (staging_handle, &staging_raw)) }?.await?;
+        unsafe {
+            app.create_copy_buffer_cmd((self.handle, &self.raw), (staging_handle, &staging_raw))
+        }?
+        .await?;
 
         staging_raw.read(out, offset)?;
 
         // Destroy staging
-        self.raw.vma.destroy_buffer(staging_handle, &staging_raw.allocation);
+        self.raw
+            .vma
+            .destroy_buffer(staging_handle, &staging_raw.allocation);
         Ok(())
     }
 }

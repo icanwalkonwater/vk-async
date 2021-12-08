@@ -2,7 +2,7 @@ use log::{info, LevelFilter};
 use simplelog::{ColorChoice, Config, TermLogger, TerminalMode};
 use vk_async::setup::VulkanBuilder;
 
-#[tokio::main(flavor = "current_thread")]
+#[tokio::main]
 async fn main() -> anyhow::Result<()> {
     TermLogger::init(
         LevelFilter::Debug,
@@ -28,7 +28,6 @@ async fn main() -> anyhow::Result<()> {
 
     let app = builder.set_physical_device(gpu).build()?;
 
-    // Start an async context
     let in_data = [1, 2, 3, 4];
     info!("Creating buffer containing {:?}", in_data);
     let buffer = app

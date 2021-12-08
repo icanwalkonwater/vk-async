@@ -1,14 +1,14 @@
-use crate::mem::RawAllocation;
 use crate::{
     errors::{Result, VulkanError},
+    mem::RawAllocation,
     VulkanApp,
 };
 use ash::vk;
-use log::debug;
-use std::slice::from_ref;
+
 use std::{
     future::Future,
     pin::Pin,
+    slice::from_ref,
     task::{Context, Poll},
 };
 
@@ -72,7 +72,7 @@ impl Future for WaitForFenceFuture<'_> {
                 Ok(false) => {
                     ctx.waker().wake_by_ref();
                     Poll::Pending
-                },
+                }
                 Err(e) => Poll::Ready(Err(VulkanError::VkError(e))),
             }
         }

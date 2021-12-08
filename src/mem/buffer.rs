@@ -1,4 +1,4 @@
-use crate::{errors::Result, mem::{RawAllocation}, mem};
+use crate::{errors::Result, mem, mem::RawAllocation};
 use ash::vk;
 use std::{marker::PhantomData, sync::Arc};
 
