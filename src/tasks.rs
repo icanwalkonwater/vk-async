@@ -12,47 +12,10 @@ use std::{
     task::{Context, Poll},
 };
 
-impl VulkanApp {
-    pub(crate) unsafe fn create_copy_buffer_cmd(
-        &self,
-        src: (vk::Buffer, &RawAllocation),
-        dst: (vk::Buffer, &RawAllocation),
-    ) -> Result<WaitForFenceFuture> {
-        let cmd = {
-            // Lock pool for the whole recording session
-            let pool = self.queues.transfer().pool.lock();
-            let cmd = self.device.allocate_command_buffers(
-                &vk::CommandBufferAllocateInfo::builder()
-                    .command_pool(*pool)
-                    .command_buffer_count(1)
-                    .level(vk::CommandBufferLevel::PRIMARY),
-            )?[0];
+mod alloc;
+mod commands;
 
-            self.device.begin_command_buffer(
-                cmd,
-                &vk::CommandBufferBeginInfo::builder()
-                    .flags(vk::CommandBufferUsageFlags::ONE_TIME_SUBMIT),
-            )?;
-
-            let copy = vk::BufferCopy::builder()
-                .size(src.1.size)
-                .src_offset(0)
-                .dst_offset(0);
-
-            self.device
-                .cmd_copy_buffer(cmd, src.0, dst.0, from_ref(&copy));
-
-            self.device.end_command_buffer(cmd)?;
-
-            cmd
-        };
-
-        let submit_info = vk::SubmitInfo::builder().command_buffers(from_ref(&cmd));
-
-        self.queues
-            .submit_to_transfer(&self.device, from_ref(&submit_info))
-    }
-}
+const WAIT_FOR_FENCE_SPIN_INTERVALS_NS: u64 = 200;
 
 pub(crate) struct WaitForFenceFuture<'a> {
     pub(crate) device: &'a ash::Device,
@@ -64,12 +27,19 @@ impl Future for WaitForFenceFuture<'_> {
 
     fn poll(self: Pin<&mut Self>, ctx: &mut Context<'_>) -> Poll<Self::Output> {
         unsafe {
-            match self.device.get_fence_status(self.fence) {
-                Ok(true) => {
+            // Wait for a little time while, then let other things run and spin again
+            let res = self.device.wait_for_fences(
+                from_ref(&self.fence),
+                true,
+                WAIT_FOR_FENCE_SPIN_INTERVALS_NS,
+            );
+
+            match res {
+                Ok(_) => {
                     self.device.destroy_fence(self.fence, None);
                     Poll::Ready(Ok(()))
                 }
-                Ok(false) => {
+                Err(vk::Result::TIMEOUT) => {
                     ctx.waker().wake_by_ref();
                     Poll::Pending
                 }

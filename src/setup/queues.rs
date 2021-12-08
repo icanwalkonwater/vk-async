@@ -185,10 +185,11 @@ impl DeviceQueues {
         device: &'a ash::Device,
         submit_info: &[vk::SubmitInfo],
     ) -> Result<WaitForFenceFuture<'a>> {
-        unsafe { Self::submit_internal(device, &self.transfer().queue, submit_info) }
+        unsafe { self.submit_to_queue(device, &self.transfer().queue, submit_info) }
     }
 
-    unsafe fn submit_internal<'a>(
+    pub(crate) unsafe fn submit_to_queue<'a>(
+        &self,
         device: &'a ash::Device,
         queue: &Mutex<vk::Queue>,
         submit_info: &[vk::SubmitInfo],

@@ -2,6 +2,7 @@
 name = "vk-async"
 version = "0.0.0"
 edition = "2021"
+authors = ["Lucas Malandrino <lucas.malandrino@gmail.com>"]
 
 [dependencies]
 ash = "^0.33.3"

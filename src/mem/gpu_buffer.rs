@@ -53,7 +53,7 @@ impl<D: Sized + Copy> GpuBufferHandle<D> {
 
         staging_raw.write_to(data)?;
         unsafe {
-            app.create_copy_buffer_cmd((staging_handle, &staging_raw), (self.handle, &self.raw))
+            app.cmd_copy_buffer((staging_handle, &staging_raw), (self.handle, &self.raw))
         }?
         .await?;
 
@@ -73,7 +73,7 @@ impl<D: Sized + Copy> GpuBufferHandle<D> {
         )?;
 
         unsafe {
-            app.create_copy_buffer_cmd((self.handle, &self.raw), (staging_handle, &staging_raw))
+            app.cmd_copy_buffer((self.handle, &self.raw), (staging_handle, &staging_raw))
         }?
         .await?;
 
